@@ -476,7 +476,11 @@ void TFT_eSPI::pushBlock(uint16_t color, uint32_t len){
   #if defined (SSD1963_DRIVER)
     while (--len) {WR_L; WR_H; WR_L; WR_H; WR_L; WR_H;}
   #else
-    while (--len) {WR_L; WR_H; WR_L; WR_H;}
+    #ifdef PSEUDO_16_BIT
+      while (--len) {WR_L; WR_H;}
+    #else
+      while (--len) {WR_L; WR_H; WR_L; WR_H;}
+    #endif
   #endif
   }
   else while (len--) {tft_Write_16(color);}
@@ -640,7 +644,7 @@ void TFT_eSPI::pushImageDMA(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t
     }
   }
 
-  if (spiBusyCheck) dmaWait(); // Incase we did not wait earlier
+  if (spiBusyCheck) dmaWait(); // In case we did not wait earlier
 
   setAddrWindow(x, y, dw, dh);
 

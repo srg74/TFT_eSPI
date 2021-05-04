@@ -217,11 +217,7 @@
   #ifdef USE_HSPI_PORT
 
     #ifndef TFT_MISO
-      #define TFT_MISO 12
-    #endif
-    #if (TFT_MISO == -1)
-      #undef TFT_MISO
-      #define TFT_MISO 12
+      #define TFT_MISO -1
     #endif
 
     #ifndef TFT_MOSI
@@ -243,11 +239,7 @@
   #else // VSPI port
 
     #ifndef TFT_MISO
-      #define TFT_MISO 19
-    #endif
-    #if (TFT_MISO == -1)
-      #undef TFT_MISO
-      #define TFT_MISO 19
+      #define TFT_MISO -1
     #endif
 
     #ifndef TFT_MOSI
@@ -327,13 +319,20 @@
 
   #else
 
-    // Write 16 bits to TFT
-    #define tft_Write_16(C) GPIO.out_w1tc = clr_mask; GPIO.out_w1ts = set_mask((uint8_t) ((C) >> 8)); WR_H; \
-                            GPIO.out_w1tc = clr_mask; GPIO.out_w1ts = set_mask((uint8_t) ((C) >> 0)); WR_H
+    #ifdef PSEUDO_16_BIT
+      // One write strobe for both bytes
+      #define tft_Write_16(C)  GPIO.out_w1tc = clr_mask; GPIO.out_w1ts = set_mask((uint8_t) ((C) >> 0)); WR_H
+      #define tft_Write_16S(C) GPIO.out_w1tc = clr_mask; GPIO.out_w1ts = set_mask((uint8_t) ((C) >> 8)); WR_H
+    #else
+      // Write 16 bits to TFT
+      #define tft_Write_16(C) GPIO.out_w1tc = clr_mask; GPIO.out_w1ts = set_mask((uint8_t) ((C) >> 8)); WR_H; \
+                              GPIO.out_w1tc = clr_mask; GPIO.out_w1ts = set_mask((uint8_t) ((C) >> 0)); WR_H
 
-    // 16 bit write with swapped bytes
-    #define tft_Write_16S(C) GPIO.out_w1tc = clr_mask; GPIO.out_w1ts = set_mask((uint8_t) ((C) >> 0)); WR_H; \
-                             GPIO.out_w1tc = clr_mask; GPIO.out_w1ts = set_mask((uint8_t) ((C) >> 8)); WR_H
+      // 16 bit write with swapped bytes
+      #define tft_Write_16S(C) GPIO.out_w1tc = clr_mask; GPIO.out_w1ts = set_mask((uint8_t) ((C) >> 0)); WR_H; \
+                               GPIO.out_w1tc = clr_mask; GPIO.out_w1ts = set_mask((uint8_t) ((C) >> 8)); WR_H
+    #endif
+
   #endif
 
   // Write 32 bits to TFT
@@ -455,7 +454,13 @@
   #define tft_Write_32(C) TFT_WRITE_BITS(C, 32)
 
   // Write two address coordinates
-  #define tft_Write_32C(C,D)  TFT_WRITE_BITS((uint16_t)((D)<<8 | (D)>>8)<<16 | (uint16_t)((C)<<8 | (C)>>8), 32)
+  #define tft_Write_16C(C,D) TFT_WRITE_BITS((uint16_t)(D)<<8 | (C), 16)
+
+  // Write same value twice
+  #define tft_Write_16D(C) TFT_WRITE_BITS((uint16_t)(C)<<8 | (C), 16)
+
+  // Write two address coordinates
+  #define tft_Write_32C(C,D) TFT_WRITE_BITS((uint16_t)((D)<<8 | (D)>>8)<<16 | (uint16_t)((C)<<8 | (C)>>8), 32)
 
   // Write same value twice
   #define tft_Write_32D(C) TFT_WRITE_BITS((uint16_t)((C)<<8 | (C)>>8)<<16 | (uint16_t)((C)<<8 | (C)>>8), 32)
